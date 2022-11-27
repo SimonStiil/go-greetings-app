@@ -12,6 +12,19 @@ podTemplate(yaml: '''
         volumeMounts:
         - name: kaniko-secret
           mountPath: /kaniko/.docker
+      - name: k8s
+        image: alpine/k8s:1.23.14
+        command:
+        - sleep
+        args: 
+        - 99d
+        volumeMounts:
+        - name: kubeconfig-secret
+          mountPath: /.kube/config
+          subPath: config
+        env:
+        - name: KUBECONFIG
+          value: "/.kube/config"
       restartPolicy: Never
       volumes:
       - name: kaniko-secret
@@ -20,6 +33,12 @@ podTemplate(yaml: '''
             items:
             - key: .dockerconfigjson
               path: config.json
+      - name: kubeconfig-secret
+        secret:
+            secretName: master-kubeconfig
+            items:
+            - key: config
+              path: config
 ''') {
   node(POD_LABEL) {
     stage('checkout SCM') {  
@@ -29,6 +48,13 @@ podTemplate(yaml: '''
       container('kaniko') {
         sh '''
           /kaniko/executor --force --context `pwd` --destination registry.stiil.dk/jenkins/go-greetings-app:$BRANCH_NAME
+        '''
+      }
+    }
+    stage('Deploy container') {
+      container('k8s') {
+        sh '''
+          kubectl create deployment -n jenkins-dev go-greetings-app-$BRANCH_NAME --image=registry.stiil.dk/jenkins/go-greetings-app:$BRANCH_NAME --port=8080
         '''
       }
     }
