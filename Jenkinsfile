@@ -54,7 +54,7 @@ podTemplate(yaml: '''
     stage('Deploy container') {
       container('k8s') {
         sh '''
-          kubectl create deployment -n jenkins-dev go-greetings-app-$BRANCH_NAME --image=registry.stiil.dk/jenkins/go-greetings-app:$BRANCH_NAME --port=8080
+          helm upgrade -i -n jenkins-dev go-greetings-app-jenkins ./base_chart
         '''
       }
     }
