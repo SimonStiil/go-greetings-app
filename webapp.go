@@ -23,9 +23,22 @@ func greetingController(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+type Health struct {
+	Status string `json:"status"`
+}
+
+func healthActuayor(w http.ResponseWriter, r *http.Request) {
+	reply := Health{"UP"}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(reply)
+	return
+}
+
 func main() {
-	handler := http.HandlerFunc(greetingController)
-	http.HandleFunc("/greeting", handler)
-	http.HandleFunc("/", handler)
+	greetingHandler := http.HandlerFunc(greetingController)
+	http.HandleFunc("/greeting", greetingHandler)
+	http.HandleFunc("/", greetingHandler)
+	healthHandler := http.HandlerFunc(healthActuayor)
+	http.HandleFunc("/actuator/health", healthHandler)
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
