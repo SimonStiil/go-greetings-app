@@ -18,27 +18,15 @@ podTemplate(yaml: '''
         - sleep
         args: 
         - 99d
-        volumeMounts:
-        - name: kubeconfig-secret
-          mountPath: /.kube/config
-          subPath: config
-        env:
-        - name: KUBECONFIG
-          value: "/.kube/config"
+      serviceAccountName: jenkins-tester
       restartPolicy: Never
       volumes:
       - name: kaniko-secret
         secret:
-            secretName: dockercred
-            items:
-            - key: .dockerconfigjson
-              path: config.json
-      - name: kubeconfig-secret
-        secret:
-            secretName: master-kubeconfig
-            items:
-            - key: config
-              path: config
+          secretName: dockercred
+          items:
+          - key: .dockerconfigjson
+            path: config.json
 ''') {
   node(POD_LABEL) {
     stage('checkout SCM') {  
@@ -51,6 +39,20 @@ podTemplate(yaml: '''
         '''
       }
     }
+    stage('Use Service account') {
+      container('k8s') {
+        sh '''
+          export SAPATH=/var/run/secrets/kubernetes.io/serviceaccount 
+          kubectl config set-cluster cfc --server=https://kubernetes.default --certificate-authority=$SAPATH/ca.crt
+          set +x
+          token=$(cat $SAPATH/token)
+          kubectl config set-credentials cfc --token=${token}
+          set -x
+          kubectl config set-context cfc --cluster=cfc --user=cfc
+          kubectl config use-context cfc
+        '''
+      }
+    }
     stage('Deploy container') {
       container('k8s') {
         sh '''
@@ -58,5 +60,11 @@ podTemplate(yaml: '''
         '''
       }
     }
+  }
+  stage('is service online'){
+    httpRequest url: 'https://go-greetings-app-jenkins.k3s.stiil.dk/aktuator/health',
+            acceptType: 'APPLICATION_JSON',
+            contentType: 'APPLICATION_JSON',
+            validResponseCodes: "200"
   }
 }
