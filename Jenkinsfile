@@ -1,3 +1,8 @@
+properties([disableConcurrentBuilds(), buildDiscarder(logRotator(artifactDaysToKeepStr: '5', artifactNumToKeepStr: '5', daysToKeepStr: '5', numToKeepStr: '5'))])
+
+@Library('pipeline-library')
+import dk.stiil.pipeline.Constants
+
 podTemplate(yaml: '''
     apiVersion: v1
     kind: Pod
@@ -62,9 +67,6 @@ podTemplate(yaml: '''
     }
   }
   stage('is service online'){
-    httpRequest url: 'https://go-greetings-app-jenkins.k3s.stiil.dk/aktuator/health',
-            acceptType: 'APPLICATION_JSON',
-            contentType: 'APPLICATION_JSON',
-            validResponseCodes: "200"
+    waitForServiceToComeOnline serviceBaseURL: 'https://go-greetings-app-jenkins.k3s.stiil.dk/aktuator/health', maxRetries: 20
   }
 }
