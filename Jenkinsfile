@@ -47,6 +47,7 @@ podTemplate(yaml: '''
     stage('Use Service account') {
       container('k8s') {
         sh '''
+          env
           export SAPATH=/var/run/secrets/kubernetes.io/serviceaccount 
           kubectl config set-cluster cfc --server=https://kubernetes.default --certificate-authority=$SAPATH/ca.crt
           set +x
