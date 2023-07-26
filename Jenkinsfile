@@ -36,6 +36,7 @@ podTemplate(yaml: '''
   node(POD_LABEL) {
     stage('checkout SCM') {  
       checkout scm
+      println scmGetInfo()
     }
     stage('Build Docker Image') {
       container('kaniko') {
