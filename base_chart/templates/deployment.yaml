@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "base_chart.fullname" . }}
+  name: {{ include "base_chart.name" . }}
   labels:
     {{- include "base_chart.labels" . | nindent 4 }}
 spec:

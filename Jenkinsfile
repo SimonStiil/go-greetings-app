@@ -34,41 +34,44 @@ podTemplate(yaml: '''
             path: config.json
 ''') {
   node(POD_LABEL) {
+    LinkedHashMap<String,Object> scmInfo
     stage('checkout SCM') {  
       checkout scm
-      println scmGetInfo()
+      scmInfo = scmGetInfo()
     }
     stage('Build Docker Image') {
       container('kaniko') {
-        sh '''
-          /kaniko/executor --force --context `pwd` --destination registry.stiil.dk/jenkins/go-greetings-app:$BRANCH_NAME
-        '''
+        withEnv(["GIT_REPO_NAME=${scmInfo.repoName}"]) {
+          sh '''
+            /kaniko/executor --force --context `pwd` --destination registry.stiil.dk/jenkins/$GIT_REPO_NAME:$BRANCH_NAME
+          '''
+        }
       }
     }
     stage('Use Service account') {
       container('k8s') {
-        sh '''
-          env
-          export SAPATH=/var/run/secrets/kubernetes.io/serviceaccount 
-          kubectl config set-cluster cfc --server=https://kubernetes.default --certificate-authority=$SAPATH/ca.crt
-          set +x
-          token=$(cat $SAPATH/token)
-          kubectl config set-credentials cfc --token=${token}
-          set -x
-          kubectl config set-context cfc --cluster=cfc --user=cfc
-          kubectl config use-context cfc
-        '''
+        setupKubernetesSA()
       }
     }
     stage('Deploy container') {
       container('k8s') {
-        sh '''
-          helm upgrade -i -n jenkins-dev go-greetings-app-jenkins ./base_chart
-        '''
+        withEnv([
+          "GIT_ORG_NAME=${scmInfo.orgName}",
+          "GIT_REPO_NAME=${scmInfo.repoName}",
+          "GIT_COMMIT=${scmInfo.commit}",
+          "GIT_TAG=${scmInfo.tag}",
+          "GIT_URL=${scmInfo.url}",
+          "DEV_NAMESPACE=${DEV_NAMESPACE}"]) {
+          sh '''
+            helm upgrade -i -n $DEV_NAMESPACE $GIT_REPO_NAME-$BRANCH_NAME --set git.url=$GIT_URL \
+            --set git.org=$GIT_ORG_NAME --set git.repo=$GIT_REPO_NAME --set git.commit=$GIT_COMMIT \
+            --set git.tag=$GIT_TAG --set git.branch=$BRANCH_NAME ./base_chart
+          '''
+        }
       }
     }
   }
   stage('is service online'){
-    waitForServiceToComeOnline serviceBaseURL: 'https://go-greetings-app-jenkins.k3s.stiil.dk/aktuator/health', maxRetries: 20
+    waitForServiceToComeOnline serviceBaseURL: "https://${GIT_REPO_NAME}-${BRANCH_NAME}.k3s.stiil.dk/aktuator/health", maxRetries: 20
   }
 }

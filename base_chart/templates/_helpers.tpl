@@ -48,8 +48,12 @@ Selector labels
 {{- define "base_chart.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "base_chart.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
-app.kubernetes.io/git-repo: {{ .Values.gitRepo }}
-app.kubernetes.io/git-branch: {{ .Values.gitBranch }}
+stiil.dk/git-url: {{ .Values.git.url }}
+stiil.dk/git-org: {{ .Values.git.org }}
+stiil.dk/git-repo: {{ .Values.git.repo }}
+stiil.dk/git-branch: {{ .Values.git.branch }}
+stiil.dk/git-tag: {{ .Values.git.tag }}
+stiil.dk/git-commit: {{ .Values.git.commit }}
 {{- end }}
 
 {{/*

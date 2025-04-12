@@ -1,5 +1,5 @@
 {{- if .Values.ingress.enabled -}}
-{{- $fullName := include "base_chart.fullname" . -}}
+{{- $name := include "base_chart.name" . -}}
 {{- $svcPort := .Values.service.port -}}
 {{- if and .Values.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
   {{- if not (hasKey .Values.ingress.annotations "kubernetes.io/ingress.class") }}
@@ -19,7 +19,7 @@ apiVersion: extensions/v1beta1
 {{- end }}
 kind: Ingress
 metadata:
-  name: {{ $fullName }}
+  name: {{ $name }}
   labels:
     {{- include "base_chart.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
@@ -36,9 +36,9 @@ spec:
     - hosts:
         {{- range .hosts }}
           {{- if $.Values.ingress.baseURL -}}
-        - {{ printf "%s.%s" . $.Values.ingress.baseURL | quote }}
+        - {{ printf "%s.%s" .host $.Values.ingress.baseURL | quote }}
           {{- else -}}
-        - {{ . | quote }}
+        - {{ .host | quote }}
           {{- end }}
         {{- end }}
       secretName: {{ .secretName }}
@@ -61,11 +61,11 @@ spec:
             backend:
               {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
               service:
-                name: {{ $fullName }}
+                name: {{ $name }}
                 port:
                   number: {{ $svcPort }}
               {{- else }}
-              serviceName: {{ $fullName }}
+              serviceName: {{ $name }}
               servicePort: {{ $svcPort }}
               {{- end }}
           {{- end }}
