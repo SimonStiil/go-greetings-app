@@ -9,6 +9,7 @@ import (
 
 func TestGETGreeting(t *testing.T) {
 	t.Run("returns Pepper's score", func(t *testing.T) {
+		count := getCount() + 1
 		request, _ := http.NewRequest(http.MethodGet, "/greeting", nil)
 		response := httptest.NewRecorder()
 
@@ -18,13 +19,13 @@ func TestGETGreeting(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		greetinWanted := Greeting{0, "Hello, World!"}
+		greetinWanted := Greeting{count, "Hello, World!"}
 
 		if greetingReply.Id != greetinWanted.Id {
-			t.Errorf(".id got %q, want %q", greetingReply.Id, greetinWanted.Id)
+			t.Errorf(".id got %v, want %v", greetingReply.Id, greetinWanted.Id)
 		}
 		if greetingReply.Content != greetinWanted.Content {
-			t.Errorf(".content got %q, want %q", greetingReply.Content, greetinWanted.Content)
+			t.Errorf(".content got %v, want %v", greetingReply.Content, greetinWanted.Content)
 		}
 	})
 }

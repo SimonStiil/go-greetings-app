@@ -1,3 +1,3 @@
-module webapp
+module github.com/SimonStiil/go-greetings-app
 
-go 1.18
+go 1.23.0
